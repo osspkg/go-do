@@ -68,3 +68,21 @@ func TestUnit_ReduceMap(t *testing.T) {
 	})
 	casecheck.Equal(t, "010203", out)
 }
+
+func TestUnit_ToSlice(t *testing.T) {
+	type A struct {
+		K int
+		V string
+	}
+	out := do.ToSlice[int, string, A](map[int]string{2: "02", 1: "01", 3: "03"}, func(value string, key int) A {
+		return A{
+			K: key,
+			V: value,
+		}
+	})
+	casecheck.Equal(t, []A{
+		{K: 1, V: "01"},
+		{K: 2, V: "02"},
+		{K: 3, V: "03"},
+	}, out)
+}

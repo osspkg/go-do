@@ -94,3 +94,11 @@ func ReduceMap[K Comparable, V any](in map[K]V, call func(result, value V, key K
 	}
 	return
 }
+
+func ToSlice[K Comparable, V any, T any](in map[K]V, call func(value V, key K) T) (out []T) {
+	out = make([]T, 0, len(in))
+	for _, k := range Keys[K, V](in) {
+		out = append(out, call(in[k], k))
+	}
+	return
+}
