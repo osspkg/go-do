@@ -49,6 +49,15 @@ func ToMap[T comparable](in []T) (out map[T]struct{}) {
 	return
 }
 
+func Entries[T any, K comparable, V any](in []T, call func(T) (K, V)) (out map[K]V) {
+	out = make(map[K]V, len(in))
+	for _, val := range in {
+		k, v := call(val)
+		out[k] = v
+	}
+	return
+}
+
 func Reduce[T any](in []T, call func(result, value T, index int) T) (out T) {
 	for i, v := range in {
 		out = call(out, v, i)
