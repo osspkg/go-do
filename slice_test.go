@@ -189,3 +189,12 @@ func TestUnit_Uniq(t *testing.T) {
 	out := do.Unique[int](data)
 	casecheck.Equal(t, []int{0, 1, 5, 2, 8}, out)
 }
+
+func TestUnit_Entries(t *testing.T) {
+	data := []int{5}
+
+	out := do.Entries[int, int, int](data, func(i int) (int, int) {
+		return i, i * 2
+	})
+	casecheck.Equal(t, map[int]int{5: 10}, out)
+}

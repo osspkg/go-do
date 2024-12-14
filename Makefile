@@ -1,27 +1,28 @@
 
 .PHONY: install
 install:
-	go install github.com/osspkg/devtool@latest
-
-.PHONY: setup
-setup:
-	devtool setup-lib
+	go install go.osspkg.com/goppy/v2/cmd/goppy@latest
+	goppy setup-lib
 
 .PHONY: lint
 lint:
-	devtool lint
+	goppy lint
 
 .PHONY: license
 license:
-	devtool license
+	goppy license
+
+.PHONY: build
+build:
+	goppy build --arch=amd64
 
 .PHONY: tests
 tests:
-	devtool test
+	goppy test
 
-.PHONY: pre-commit
-pre-commit: setup license lint tests
+.PHONY: pre-commite
+pre-commite: install lint tests build
 
 .PHONY: ci
-ci: install setup lint tests
+ci: pre-commite
 
