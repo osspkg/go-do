@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2024 Mikhail Knyazhev <markus621@yandex.com>. All rights reserved.
+ *  Copyright (c) 2024-2025 Mikhail Knyazhev <markus621@yandex.com>. All rights reserved.
  *  Use of this source code is governed by a BSD 3-Clause license that can be found in the LICENSE file.
  */
 
@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"go.osspkg.com/casecheck"
+
 	"go.osspkg.com/do"
 )
 
@@ -25,7 +26,8 @@ func TestUnit_Recovery(t *testing.T) {
 		}()
 	})
 	casecheck.Error(t, err)
-	casecheck.Contains(t, err.Error(), "panic=1 trace=./async_test.go:24 go.osspkg.com/do_test.TestUnit_Recovery.func1.1")
+	casecheck.Contains(t, err.Error(), "panic=1 trace=./async_test.go:")
+	casecheck.Contains(t, err.Error(), "go.osspkg.com/do_test.TestUnit_Recovery.func1.1")
 	casecheck.Equal(t, "1", errors.Unwrap(err).Error())
 }
 
@@ -39,7 +41,8 @@ func TestUnit_Async(t *testing.T) {
 		err.Store(e)
 	})
 	time.Sleep(100 * time.Millisecond)
-	casecheck.Contains(t, err.Load().(error).Error(), "panic=1 trace=./async_test.go:36 go.osspkg.com/do_test.TestUnit_Async.func1.1")
+	casecheck.Contains(t, err.Load().(error).Error(), "panic=1 trace=./async_test.go:")
+	casecheck.Contains(t, err.Load().(error).Error(), "go.osspkg.com/do_test.TestUnit_Async.func1.1")
 	casecheck.Equal(t, "1", errors.Unwrap(err.Load().(error)).Error())
 }
 

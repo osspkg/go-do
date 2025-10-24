@@ -1,3 +1,5 @@
+SHELL=/bin/bash
+
 
 .PHONY: install
 install:
@@ -20,9 +22,9 @@ build:
 tests:
 	goppy test
 
-.PHONY: pre-commite
-pre-commite: install lint tests build
+.PHONY: pre-commit
+pre-commit: install license lint tests build
 
 .PHONY: ci
-ci: pre-commite
+ci: pre-commit
 

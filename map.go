@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2024 Mikhail Knyazhev <markus621@yandex.com>. All rights reserved.
+ *  Copyright (c) 2024-2025 Mikhail Knyazhev <markus621@yandex.com>. All rights reserved.
  *  Use of this source code is governed by a BSD 3-Clause license that can be found in the LICENSE file.
  */
 
@@ -20,6 +20,28 @@ func FilterMap[K comparable, V any](in map[K]V, filter func(key K, value V) bool
 	for k, v := range in {
 		if !filter(k, v) {
 			continue
+		}
+		out[k] = v
+	}
+	return
+}
+
+func TreatMap[K comparable, V any](in map[K]V, prepare ...func(key K, value V) (K, V)) (out map[K]V) {
+	out = make(map[K]V, len(in))
+	for k, v := range in {
+		for _, fn := range prepare {
+			k, v = fn(k, v)
+		}
+		out[k] = v
+	}
+	return
+}
+
+func TreatMapValue[K comparable, V any](in map[K]V, prepare ...func(V) V) (out map[K]V) {
+	out = make(map[K]V, len(in))
+	for k, v := range in {
+		for _, fn := range prepare {
+			v = fn(v)
 		}
 		out[k] = v
 	}

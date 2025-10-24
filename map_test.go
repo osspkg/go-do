@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2024 Mikhail Knyazhev <markus621@yandex.com>. All rights reserved.
+ *  Copyright (c) 2024-2025 Mikhail Knyazhev <markus621@yandex.com>. All rights reserved.
  *  Use of this source code is governed by a BSD 3-Clause license that can be found in the LICENSE file.
  */
 
@@ -7,9 +7,11 @@ package do_test
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"go.osspkg.com/casecheck"
+
 	"go.osspkg.com/do"
 )
 
@@ -85,4 +87,12 @@ func TestUnit_ToSlice(t *testing.T) {
 		{K: 2, V: "02"},
 		{K: 3, V: "03"},
 	}, out)
+}
+
+func TestUnit_Tear(t *testing.T) {
+	out := do.TreatMap[int, string](map[int]string{2: "A"}, func(key int, value string) (int,
+		string) {
+		return -key, strings.ToLower(value)
+	})
+	casecheck.Equal(t, map[int]string{-2: "a"}, out)
 }

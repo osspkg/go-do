@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2024 Mikhail Knyazhev <markus621@yandex.com>. All rights reserved.
+ *  Copyright (c) 2024-2025 Mikhail Knyazhev <markus621@yandex.com>. All rights reserved.
  *  Use of this source code is governed by a BSD 3-Clause license that can be found in the LICENSE file.
  */
 
@@ -172,6 +172,28 @@ func Filter[T any](in []T, filter func(value T, index int) bool) (out []T) {
 		if filter(v, i) {
 			out = append(out, v)
 		}
+	}
+	return
+}
+
+func Treat[T any](in []T, prepare ...func(value T, index int) T) (out []T) {
+	out = make([]T, 0, len(in))
+	for i, v := range in {
+		for _, fn := range prepare {
+			v = fn(v, i)
+		}
+		out = append(out, v)
+	}
+	return
+}
+
+func TreatValue[T any](in []T, prepare ...func(T) T) (out []T) {
+	out = make([]T, 0, len(in))
+	for _, v := range in {
+		for _, fn := range prepare {
+			v = fn(v)
+		}
+		out = append(out, v)
 	}
 	return
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2024 Mikhail Knyazhev <markus621@yandex.com>. All rights reserved.
+ *  Copyright (c) 2024-2025 Mikhail Knyazhev <markus621@yandex.com>. All rights reserved.
  *  Use of this source code is governed by a BSD 3-Clause license that can be found in the LICENSE file.
  */
 
@@ -7,9 +7,11 @@ package do_test
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"go.osspkg.com/casecheck"
+
 	"go.osspkg.com/do"
 )
 
@@ -197,4 +199,23 @@ func TestUnit_Entries(t *testing.T) {
 		return i, i * 2
 	})
 	casecheck.Equal(t, map[int]int{5: 10}, out)
+}
+
+func TestUnit_Treat(t *testing.T) {
+	data := []int{1, 2, 3, 4, 5}
+
+	out := do.Treat[int](data, func(v int, i int) int {
+		if i%2 == 0 {
+			return v
+		}
+		return -v
+	})
+	casecheck.Equal(t, []int{1, -2, 3, -4, 5}, out)
+}
+
+func TestUnit_TreatValue(t *testing.T) {
+	data := []string{"a ", " b \n"}
+
+	out := do.TreatValue[string](data, strings.TrimSpace, strings.ToUpper)
+	casecheck.Equal(t, []string{"A", "B"}, out)
 }
