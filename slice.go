@@ -11,6 +11,14 @@ func Each[T any](in []T, call func(value T, index int)) {
 	}
 }
 
+func Convert[T, V any](in []T, call func(value T, index int) V) (out []V) {
+	out = make([]V, len(in))
+	for i, v := range in {
+		out[i] = call(v, i)
+	}
+	return
+}
+
 func Join[T any](in ...[]T) (out []T) {
 	size := 0
 	for _, m := range in {
