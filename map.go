@@ -15,6 +15,15 @@ func EachMap[K Comparable, V any](in map[K]V, call func(key K, value V)) {
 	}
 }
 
+func ConvertMap[K1, K2 comparable, V1, V2 any](in map[K1]V1, call func(key K1, value V1) (K2, V2)) (out map[K2]V2) {
+	out = make(map[K2]V2, len(in))
+	for k1, v1 := range in {
+		k2, v2 := call(k1, v1)
+		out[k2] = v2
+	}
+	return
+}
+
 func FilterMap[K comparable, V any](in map[K]V, filter func(key K, value V) bool) (out map[K]V) {
 	out = make(map[K]V, len(in))
 	for k, v := range in {
