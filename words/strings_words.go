@@ -3,7 +3,7 @@
  *  Use of this source code is governed by a BSD 3-Clause license that can be found in the LICENSE file.
  */
 
-package do
+package words
 
 import (
 	"bufio"
@@ -32,7 +32,7 @@ type _words struct {
 	digit  []func(r rune) bool
 }
 
-func NewStringWords(s string) Words {
+func NewString(s string) Words {
 	w := &_words{
 		reader: strings.NewReader(s),
 	}
@@ -42,7 +42,7 @@ func NewStringWords(s string) Words {
 	return w
 }
 
-func NewBytesWords(b []byte) Words {
+func NewBytes(b []byte) Words {
 	w := &_words{
 		reader: bytes.NewReader(b),
 	}
@@ -160,15 +160,15 @@ func (v *_words) scannerFunc(data []byte, atEOF bool) (int, []byte, error) {
 	return start, nil, nil
 }
 
-func WordStrings(s string) []string {
-	w := NewStringWords(s)
+func Strings(s string) []string {
+	w := NewString(s)
 	w.UseDefaultBlock()
 	w.UseDefaultSymbol()
 	return w.Strings()
 }
 
-func WordBytes(b []byte) [][]byte {
-	w := NewBytesWords(b)
+func Bytes(b []byte) [][]byte {
+	w := NewBytes(b)
 	w.UseDefaultBlock()
 	w.UseDefaultSymbol()
 	return w.Bytes()
