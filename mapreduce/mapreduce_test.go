@@ -1,8 +1,14 @@
+/*
+ *  Copyright (c) 2024-2026 Mikhail Knyazhev <markus621@yandex.com>. All rights reserved.
+ *  Use of this source code is governed by a BSD 3-Clause license that can be found in the LICENSE file.
+ */
+
 package mapreduce
 
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -254,5 +260,48 @@ func TestUnit_MapReduceWaitForAllGoroutines(t *testing.T) {
 	}
 	if len(result) != len(items) {
 		t.Errorf("expected %d results, got %d", len(items), len(result))
+	}
+}
+
+func TestUnit_MapReduceRejectsNonPositiveWorkers(t *testing.T) {
+	mapper := func(ctx context.Context, value int) (int, error) { return value, nil }
+	reducer := func(ctx context.Context, acc, value int) (int, error) { return acc + value, nil }
+
+	for _, workers := range []int{0, -1} {
+		t.Run(fmt.Sprintf("workers=%d", workers), func(t *testing.T) {
+			got, err := New(context.Background(), []int{1}, mapper, reducer, 7, workers)
+			if err == nil {
+				t.Fatal("expected an error for non-positive workers")
+			}
+			if got != 7 {
+				t.Fatalf("initial value: got %d, want 7", got)
+			}
+		})
+	}
+}
+
+func TestUnit_MapReduceReducerErrorCancelsMappers(t *testing.T) {
+	wantErr := errors.New("reducer error")
+	canceled := make(chan struct{})
+	mapper := func(ctx context.Context, value int) (int, error) {
+		if value == 1 {
+			return value, nil
+		}
+		<-ctx.Done()
+		close(canceled)
+		return 0, ctx.Err()
+	}
+	reducer := func(ctx context.Context, acc, value int) (int, error) {
+		return acc, wantErr
+	}
+
+	_, err := New(context.Background(), []int{1, 2}, mapper, reducer, 0, 2)
+	if !errors.Is(err, wantErr) {
+		t.Fatalf("got error %v, want %v", err, wantErr)
+	}
+	select {
+	case <-canceled:
+	case <-time.After(time.Second):
+		t.Fatal("mapper did not observe cancellation")
 	}
 }

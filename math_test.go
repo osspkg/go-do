@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2024-2025 Mikhail Knyazhev <markus621@yandex.com>. All rights reserved.
+ *  Copyright (c) 2024-2026 Mikhail Knyazhev <markus621@yandex.com>. All rights reserved.
  *  Use of this source code is governed by a BSD 3-Clause license that can be found in the LICENSE file.
  */
 
@@ -35,6 +35,13 @@ func TestUnit_Range(t *testing.T) {
 	casecheck.Equal(t, []float64{1, 1.5, 2, 2.5, 3}, do.Range[float64](1, 3, 0.5))
 	casecheck.Equal(t, []int64{1, 2, 3}, do.Range[int64](1, 3, 1))
 	casecheck.Equal(t, []byte{'a', 'b', 'c'}, do.Range[byte]('a', 'c', 1))
+}
+
+func TestUnit_RangeInvalidOrNonProgressingStep(t *testing.T) {
+	casecheck.Equal(t, []int{}, do.Range[int](1, 10, 0))
+	casecheck.Equal(t, []int{}, do.Range[int](1, 10, -1))
+	casecheck.Equal(t, []int8{126, 127}, do.Range[int8](126, 127, 1))
+	casecheck.Equal(t, []float64{1e20}, do.Range[float64](1e20, 1e21, 1))
 }
 
 func TestUnit_MinMaxTime(t *testing.T) {
