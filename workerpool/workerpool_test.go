@@ -1,3 +1,8 @@
+/*
+ *  Copyright (c) 2024-2026 Mikhail Knyazhev <markus621@yandex.com>. All rights reserved.
+ *  Use of this source code is governed by a BSD 3-Clause license that can be found in the LICENSE file.
+ */
+
 package workerpool
 
 import (
@@ -209,4 +214,74 @@ func TestUnit_Pool_Concurrency(t *testing.T) {
 	}
 
 	p.Close()
+}
+
+func TestUnit_Pool_CloseWithFullResultsBuffer(t *testing.T) {
+	started := make(chan struct{}, 2)
+	p := New(1, func(ctx context.Context, task Task[int, int]) (int, error) {
+		started <- struct{}{}
+		return task.Data, nil
+	})
+	p.Start()
+
+	if !p.Send(Task[int, int]{ID: 1, Data: 1}) {
+		t.Fatal("first Send failed")
+	}
+	select {
+	case <-started:
+	case <-time.After(time.Second):
+		t.Fatal("first handler did not start")
+	}
+	deadline := time.Now().Add(time.Second)
+	for len(p.resultsC) == 0 && time.Now().Before(deadline) {
+		time.Sleep(time.Millisecond)
+	}
+	if len(p.resultsC) == 0 {
+		t.Fatal("first result was not buffered")
+	}
+
+	if !p.Send(Task[int, int]{ID: 2, Data: 2}) {
+		t.Fatal("second Send failed")
+	}
+	select {
+	case <-started:
+	case <-time.After(time.Second):
+		t.Fatal("second handler did not start")
+	}
+
+	closed := make(chan struct{})
+	go func() {
+		p.Close()
+		close(closed)
+	}()
+	select {
+	case <-closed:
+	case <-time.After(time.Second):
+		t.Fatal("Close blocked with a full results buffer")
+	}
+}
+
+func TestUnit_Pool_SendConcurrentWithClose(t *testing.T) {
+	p := New(2, simpleHandler)
+	p.Start()
+
+	var senders sync.WaitGroup
+	for i := 0; i < 8; i++ {
+		senders.Add(1)
+		go func(id int) {
+			defer senders.Done()
+			for j := 0; j < 100; j++ {
+				if !p.Send(Task[int, int]{ID: id*100 + j, Data: j + 1}) {
+					return
+				}
+			}
+		}(i)
+	}
+
+	p.Close()
+	senders.Wait()
+	p.Close()
+	if p.Send(Task[int, int]{ID: 1000, Data: 1}) {
+		t.Fatal("Send succeeded after Close")
+	}
 }

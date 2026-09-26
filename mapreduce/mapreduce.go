@@ -1,7 +1,13 @@
+/*
+ *  Copyright (c) 2024-2026 Mikhail Knyazhev <markus621@yandex.com>. All rights reserved.
+ *  Use of this source code is governed by a BSD 3-Clause license that can be found in the LICENSE file.
+ */
+
 package mapreduce
 
 import (
 	"context"
+	"errors"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -14,7 +20,13 @@ func New[T, R, O any](
 	initial O,
 	workers int,
 ) (O, error) {
-	g, ctx := errgroup.WithContext(ctx)
+	if workers <= 0 {
+		return initial, errors.New("workers must be greater than zero")
+	}
+
+	workCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	g, ctx := errgroup.WithContext(workCtx)
 	g.SetLimit(workers)
 
 	results := make(chan R, len(items))
@@ -45,6 +57,8 @@ func New[T, R, O any](
 		var err error
 		acc, err = reducer(ctx, acc, r)
 		if err != nil {
+			cancel()
+			_ = g.Wait()
 			return acc, err
 		}
 	}

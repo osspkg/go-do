@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2024-2025 Mikhail Knyazhev <markus621@yandex.com>. All rights reserved.
+ *  Copyright (c) 2024-2026 Mikhail Knyazhev <markus621@yandex.com>. All rights reserved.
  *  Use of this source code is governed by a BSD 3-Clause license that can be found in the LICENSE file.
  */
 
@@ -29,10 +29,18 @@ func MinMaxTime(value, minimum, maximum time.Time) time.Time {
 
 func Range[T Summable](from, to, step T) (out []T) {
 	out = make([]T, 0, 2)
-	for i := from; i <= to; i += step {
-		out = append(out, i)
+	if step <= 0 {
+		return out
 	}
-	return
+	for i := from; i <= to; {
+		out = append(out, i)
+		next := i + step
+		if next <= i {
+			return out
+		}
+		i = next
+	}
+	return out
 }
 
 func Sum[T Comparable](elements ...T) (out T) {

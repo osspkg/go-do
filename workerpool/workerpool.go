@@ -1,3 +1,8 @@
+/*
+ *  Copyright (c) 2024-2026 Mikhail Knyazhev <markus621@yandex.com>. All rights reserved.
+ *  Use of this source code is governed by a BSD 3-Clause license that can be found in the LICENSE file.
+ */
+
 package workerpool
 
 import (
@@ -17,13 +22,18 @@ type Result[I comparable, T any] struct {
 }
 
 type Pool[I comparable, T, R any] struct {
-	workers  int
-	tasksC   chan Task[I, T]
-	resultsC chan Result[I, R]
-	handler  func(ctx context.Context, task Task[I, T]) (R, error)
-	ctx      context.Context
-	cancel   context.CancelFunc
-	wg       sync.WaitGroup
+	workers   int
+	tasksC    chan Task[I, T]
+	resultsC  chan Result[I, R]
+	handler   func(ctx context.Context, task Task[I, T]) (R, error)
+	ctx       context.Context
+	cancel    context.CancelFunc
+	wg        sync.WaitGroup
+	sendWg    sync.WaitGroup
+	mu        sync.Mutex
+	closeOnce sync.Once
+	started   bool
+	closed    bool
 }
 
 func New[I comparable, T, R any](
@@ -45,13 +55,26 @@ func New[I comparable, T, R any](
 }
 
 func (p *Pool[I, T, R]) Close() {
-	p.cancel()
-	p.wg.Wait()
-	close(p.tasksC)
-	close(p.resultsC)
+	p.closeOnce.Do(func() {
+		p.mu.Lock()
+		p.closed = true
+		p.cancel()
+		p.mu.Unlock()
+
+		p.sendWg.Wait()
+		p.wg.Wait()
+		close(p.resultsC)
+	})
 }
 
 func (p *Pool[I, T, R]) Start() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.started || p.closed {
+		return
+	}
+	p.started = true
+
 	p.wg.Add(p.workers)
 	for i := 0; i < p.workers; i++ {
 		go func() {
@@ -61,10 +84,14 @@ func (p *Pool[I, T, R]) Start() {
 				select {
 				case task := <-p.tasksC:
 					result, err := p.handler(p.ctx, task)
-					p.resultsC <- Result[I, R]{
+					select {
+					case p.resultsC <- Result[I, R]{
 						TaskID: task.ID,
 						Result: result,
 						Err:    err,
+					}:
+					case <-p.ctx.Done():
+						return
 					}
 				case <-p.ctx.Done():
 					return
@@ -75,15 +102,18 @@ func (p *Pool[I, T, R]) Start() {
 }
 
 func (p *Pool[I, T, R]) Send(task Task[I, T]) bool {
-	select {
-	case <-p.ctx.Done():
+	p.mu.Lock()
+	if p.closed {
+		p.mu.Unlock()
 		return false
-	default:
 	}
+	p.sendWg.Add(1)
+	p.mu.Unlock()
+	defer p.sendWg.Done()
 
 	select {
 	case p.tasksC <- task:
-		return true
+		return p.ctx.Err() == nil
 	case <-p.ctx.Done():
 		return false
 	}
